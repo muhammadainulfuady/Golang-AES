@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AES-256-GCM Flask Fullstack</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { font-family: 'Roboto', sans-serif; }
+    .font-mono, code, pre { font-family: 'Roboto Mono', monospace; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-indigo-500/30 selection:text-indigo-200">
+
+  <div class="max-w-4xl w-full mx-auto p-4 sm:p-6 space-y-5">
+    <!-- Header -->
+    <header class="flex items-center justify-between pb-5 border-b border-slate-800/80">
+      <div class="flex items-center gap-3">
+        <div class="p-2 rounded-lg bg-slate-900 border border-slate-800 text-indigo-400">
+          <i data-lucide="shield" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-slate-100 tracking-tight">AES-256-GCM</h1>
+          <p class="text-xs text-slate-400">Enkripsi & Dekripsi Pesan Teks (Flask Fullstack)</p>
+        </div>
+      </div>
+      <span class="text-xs font-mono px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-slate-400">
+        Port 5000
+      </span>
+    </header>
+
+    <!-- Key Section -->
+    <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-4 space-y-3">
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="key" class="w-4 h-4 text-indigo-400"></i>
+          <span class="text-xs font-semibold text-slate-200">Secret Key</span>
+        </div>
+        <span id="keyStatusBadge" class="px-2 py-0.5 text-[11px] font-mono rounded border text-slate-400 bg-slate-900 border-slate-800">
+          Kosong
+        </span>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-2">
+        <input
+          type="text"
+          id="secretKeyInput"
+          placeholder="64 karakter hex..."
+          class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition"
+        />
+
+        <div class="flex gap-2">
+          <button
+            type="button"
+            id="btnCopyKey"
+            class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 border border-slate-700/80 transition cursor-pointer"
+          >
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span id="copyKeyText">Salin</span>
+          </button>
+
+          <button
+            type="button"
+            id="btnGenerateKey"
+            class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white transition cursor-pointer"
+          >
+            <i data-lucide="refresh-cw" id="iconGenerate" class="w-3.5 h-3.5"></i>
+            <span>Generate</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grid Encrypt & Decrypt -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
+      <!-- Enkripsi Card -->
+      <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between space-y-4">
+        <div class="space-y-3">
+          <div class="flex items-center gap-2 pb-2 border-b border-slate-800">
+            <i data-lucide="lock" class="w-4 h-4 text-emerald-400"></i>
+            <h2 class="text-xs font-semibold text-slate-200">Enkripsi</h2>
+          </div>
+
+          <form id="formEncrypt" class="space-y-2.5">
+            <textarea
+              id="plaintextInput"
+              rows="4"
+              placeholder="Tulis pesan..."
+              class="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 transition resize-none"
+            ></textarea>
+
+            <button
+              type="submit"
+              id="btnEncrypt"
+              class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white transition cursor-pointer"
+            >
+              <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+              <span id="btnEncryptText">Enkripsi</span>
+            </button>
+          </form>
+        </div>
+
+        <div class="space-y-1.5 pt-2 border-t border-slate-800">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-slate-400 text-[11px]">Ciphertext (Base64)</span>
+            <div id="cipherActions" class="hidden flex items-center gap-2">
+              <button
+                type="button"
+                id="btnSendToDecrypt"
+                class="inline-flex items-center gap-1 text-[11px] text-indigo-400 hover:text-indigo-300 transition cursor-pointer"
+              >
+                <span>Ke Dekripsi</span>
+                <i data-lucide="arrow-right" class="w-3 h-3"></i>
+              </button>
+              <button
+                type="button"
+                id="btnCopyCipher"
+                class="inline-flex items-center gap-1 text-[11px] text-slate-300 hover:text-white transition cursor-pointer"
+              >
+                <i data-lucide="copy" class="w-3 h-3"></i>
+                <span id="copyCipherBtnText">Salin</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="min-h-20 bg-slate-950 border border-slate-800 rounded-lg p-2.5 flex items-center justify-center">
+            <p id="ciphertextOutput" class="text-xs font-mono text-emerald-300 break-all w-full select-all hidden"></p>
+            <span id="cipherPlaceholder" class="text-[11px] text-slate-600 italic">Hasil enkripsi akan muncul di sini</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dekripsi Card -->
+      <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between space-y-4">
+        <div class="space-y-3">
+          <div class="flex items-center gap-2 pb-2 border-b border-slate-800">
+            <i data-lucide="unlock" class="w-4 h-4 text-sky-400"></i>
+            <h2 class="text-xs font-semibold text-slate-200">Dekripsi</h2>
+          </div>
+
+          <form id="formDecrypt" class="space-y-2.5">
+            <textarea
+              id="ciphertextInput"
+              rows="4"
+              placeholder="Tempel ciphertext Base64..."
+              class="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs font-mono text-slate-100 placeholder-slate-600 focus:outline-none focus:border-sky-500 transition resize-none"
+            ></textarea>
+
+            <button
+              type="submit"
+              id="btnDecrypt"
+              class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-sky-600 hover:bg-sky-500 disabled:opacity-40 text-white transition cursor-pointer"
+            >
+              <i data-lucide="unlock" class="w-3.5 h-3.5"></i>
+              <span id="btnDecryptText">Dekripsi</span>
+            </button>
+          </form>
+        </div>
+
+        <div class="space-y-1.5 pt-2 border-t border-slate-800">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-slate-400 text-[11px]">Hasil Plaintext</span>
+            <button
+              type="button"
+              id="btnCopyPlain"
+              class="hidden inline-flex items-center gap-1 text-[11px] text-slate-300 hover:text-white transition cursor-pointer"
+            >
+              <i data-lucide="copy" class="w-3 h-3"></i>
+              <span id="copyPlainBtnText">Salin</span>
+            </button>
+          </div>
+
+          <div class="min-h-20 bg-slate-950 border border-slate-800 rounded-lg p-2.5 flex items-center justify-center">
+            <p id="plaintextOutput" class="text-xs text-sky-200 break-words w-full select-all font-sans hidden"></p>
+            <span id="plainPlaceholder" class="text-[11px] text-slate-600 italic">Hasil dekripsi akan muncul di sini</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="pt-4 border-t border-slate-900 text-center text-xs text-slate-600">
+      <p>AES-256-GCM &bull; Symmetric Cryptography (Flask Fullstack)</p>
+    </footer>
+  </div>
+
+  <!-- Modal Error Dialog -->
+  <div id="modalBox" class="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl shadow-2xl max-w-md w-full overflow-hidden text-slate-100">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800">
+        <div class="flex items-center gap-2.5">
+          <i data-lucide="alert-circle" class="w-5 h-5 text-rose-400"></i>
+          <h3 id="modalTitle" class="font-semibold text-slate-100 text-sm">Error</h3>
+        </div>
+        <button type="button" id="modalCloseBtn" class="p-1 rounded-md text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition cursor-pointer">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div class="p-5 space-y-3">
+        <p id="modalMessage" class="text-xs text-slate-300 leading-relaxed"></p>
+        <div id="modalDetailsBox" class="hidden bg-slate-950 border border-slate-800/80 rounded-lg p-3 max-h-40 overflow-y-auto">
+          <pre id="modalDetailsText" class="text-xs font-mono text-slate-400 break-all whitespace-pre-wrap"></pre>
+        </div>
+      </div>
+      <div class="px-5 py-3 bg-slate-950/50 border-t border-slate-800 flex justify-end">
+        <button type="button" id="modalOkBtn" class="px-4 py-1.5 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition cursor-pointer border border-slate-700">
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    const keyInput = document.getElementById('secretKeyInput');
+    const badge = document.getElementById('keyStatusBadge');
+
+    function updateKeyBadge() {
+      const val = keyInput.value.trim();
+      if (!val) {
+        badge.textContent = 'Kosong';
+        badge.className = 'px-2 py-0.5 text-[11px] font-mono rounded border text-slate-400 bg-slate-900 border-slate-800';
+      } else if (val.length === 64 && /^[0-9a-fA-F]+$/.test(val)) {
+        badge.textContent = '64 Hex Valid';
+        badge.className = 'px-2 py-0.5 text-[11px] font-mono rounded border text-emerald-400 bg-emerald-950/40 border-emerald-800/60';
+      } else {
+        badge.textContent = `${val.length}/64 Hex`;
+        badge.className = 'px-2 py-0.5 text-[11px] font-mono rounded border text-amber-400 bg-amber-950/40 border-amber-800/60';
+      }
+    }
+    keyInput.addEventListener('input', updateKeyBadge);
+
+    // Modal
+    const modalBox = document.getElementById('modalBox');
+    function showError(title, message, details = '') {
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalMessage').textContent = message;
+      const detBox = document.getElementById('modalDetailsBox');
+      const detText = document.getElementById('modalDetailsText');
+      if (details) {
+        detText.textContent = details;
+        detBox.classList.remove('hidden');
+      } else {
+        detBox.classList.add('hidden');
+      }
+      modalBox.classList.remove('hidden');
+      modalBox.classList.add('flex');
+    }
+    function closeModal() {
+      modalBox.classList.add('hidden');
+      modalBox.classList.remove('flex');
+    }
+    document.getElementById('modalCloseBtn').onclick = closeModal;
+    document.getElementById('modalOkBtn').onclick = closeModal;
+
+    // Generate Key
+    const btnGen = document.getElementById('btnGenerateKey');
+    const iconGen = document.getElementById('iconGenerate');
+    btnGen.onclick = async () => {
+      iconGen.classList.add('animate-spin');
+      btnGen.disabled = true;
+      try {
+        const res = await fetch('/api/crypto/generate-key', { method: 'POST' });
+        const json = await res.json();
+        if (json.status === 'OK' && json.data.length > 0) {
+          keyInput.value = json.data[0].key;
+          updateKeyBadge();
+        } else {
+          showError('Gagal Membuat Kunci', json.pesan || 'Terjadi kesalahan');
+        }
+      } catch (err) {
+        showError('Gagal Membuat Kunci', err.message);
+      } finally {
+        iconGen.classList.remove('animate-spin');
+        btnGen.disabled = false;
+      }
+    };
+
+    // Copy Key
+    document.getElementById('btnCopyKey').onclick = async () => {
+      if (!keyInput.value) return;
+      await navigator.clipboard.writeText(keyInput.value);
+      const span = document.getElementById('copyKeyText');
+      span.textContent = 'Tersalin';
+      setTimeout(() => span.textContent = 'Salin', 1500);
+    };
+
+    // Encrypt
+    const formEncrypt = document.getElementById('formEncrypt');
+    const plaintextInput = document.getElementById('plaintextInput');
+    const cipherOut = document.getElementById('ciphertextOutput');
+    const cipherPlh = document.getElementById('cipherPlaceholder');
+    const cipherActions = document.getElementById('cipherActions');
+
+    formEncrypt.onsubmit = async (e) => {
+      e.preventDefault();
+      const text = plaintextInput.value.trim();
+      const key = keyInput.value.trim();
+      if (!key) return showError('Kunci Kosong', 'Masukkan atau buat kunci terlebih dahulu.');
+      if (key.length !== 64) return showError('Kunci Tidak Valid', 'Kunci harus 64 karakter hex.', `Panjang saat ini: ${key.length}`);
+      if (!text) return;
+
+      const btn = document.getElementById('btnEncrypt');
+      const btnText = document.getElementById('btnEncryptText');
+      btn.disabled = true;
+      btnText.textContent = 'Memproses...';
+
+      try {
+        const res = await fetch('/api/crypto/encrypt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plaintext: text, key })
+        });
+        const json = await res.json();
+        if (json.status === 'OK' && json.data.length > 0) {
+          cipherOut.textContent = json.data[0].ciphertext;
+          cipherOut.classList.remove('hidden');
+          cipherPlh.classList.add('hidden');
+          cipherActions.classList.remove('hidden');
+          cipherActions.classList.add('flex');
+        } else {
+          showError('Gagal Enkripsi', json.pesan || 'Terjadi kesalahan.');
+        }
+      } catch (err) {
+        showError('Gagal Enkripsi', err.message);
+      } finally {
+        btn.disabled = false;
+        btnText.textContent = 'Enkripsi';
+      }
+    };
+
+    // Send to Decrypt
+    document.getElementById('btnSendToDecrypt').onclick = () => {
+      document.getElementById('ciphertextInput').value = cipherOut.textContent;
+    };
+
+    // Copy Cipher
+    document.getElementById('btnCopyCipher').onclick = async () => {
+      if (!cipherOut.textContent) return;
+      await navigator.clipboard.writeText(cipherOut.textContent);
+      const span = document.getElementById('copyCipherBtnText');
+      span.textContent = 'Tersalin';
+      setTimeout(() => span.textContent = 'Salin', 1500);
+    };
+
+    // Decrypt
+    const formDecrypt = document.getElementById('formDecrypt');
+    const ciphertextInput = document.getElementById('ciphertextInput');
+    const plainOut = document.getElementById('plaintextOutput');
+    const plainPlh = document.getElementById('plainPlaceholder');
+    const btnCopyPlain = document.getElementById('btnCopyPlain');
+
+    formDecrypt.onsubmit = async (e) => {
+      e.preventDefault();
+      const cipher = ciphertextInput.value.trim();
+      const key = keyInput.value.trim();
+      if (!key) return showError('Kunci Kosong', 'Masukkan atau buat kunci terlebih dahulu.');
+      if (key.length !== 64) return showError('Kunci Tidak Valid', 'Kunci harus 64 karakter hex.', `Panjang saat ini: ${key.length}`);
+      if (!cipher) return;
+
+      const btn = document.getElementById('btnDecrypt');
+      const btnText = document.getElementById('btnDecryptText');
+      btn.disabled = true;
+      btnText.textContent = 'Memproses...';
+
+      try {
+        const res = await fetch('/api/crypto/decrypt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ciphertext: cipher, key })
+        });
+        const json = await res.json();
+        if (json.status === 'OK' && json.data.length > 0) {
+          plainOut.textContent = json.data[0].plaintext;
+          plainOut.classList.remove('hidden');
+          plainPlh.classList.add('hidden');
+          btnCopyPlain.classList.remove('hidden');
+          btnCopyPlain.classList.add('inline-flex');
+        } else {
+          showError('Gagal Dekripsi', json.pesan || 'Kunci salah atau ciphertext rusak.');
+        }
+      } catch (err) {
+        showError('Gagal Dekripsi', err.message);
+      } finally {
+        btn.disabled = false;
+        btnText.textContent = 'Dekripsi';
+      }
+    };
+
+    // Copy Plaintext
+    btnCopyPlain.onclick = async () => {
+      if (!plainOut.textContent) return;
+      await navigator.clipboard.writeText(plainOut.textContent);
+      const span = document.getElementById('copyPlainBtnText');
+      span.textContent = 'Tersalin';
+      setTimeout(() => span.textContent = 'Salin', 1500);
+    };
+  </script>
+</body>
+</html>
