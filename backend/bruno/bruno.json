@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "AES-256-GCM Crypto API",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

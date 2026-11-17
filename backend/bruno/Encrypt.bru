@@ -1,0 +1,18 @@
+meta {
+  name: Encrypt
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:8080/api/crypto/encrypt
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "plaintext": "Pesan rahasia tugas kriptografi semester 5",
+    "key": "4f9d2a1b7e8c3f5a0d1e2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e"
+  }
+}
